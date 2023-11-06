@@ -4,6 +4,9 @@
 # ISS Program, SADT, SAIT
 # August 2022
 
+#Below commenting completed by:
+#Dina Fedotova
+
 #This is a Bashscript that is used to assemble, link, and run x86 Assembly programs. 
 #This script will use multiple variables, as follows:
 #POSITIONAL_ARGS - an array that is used to store non-option arguments from the command line
@@ -17,9 +20,11 @@
 
 
 if [ $# -lt 1 ]; then
+	# Display the usage information, exit if there are not enough arguments
 	echo "Usage:"
 	echo ""
 	echo "x86_toolchain.sh [ options ] <assembly filename> [-o | --output <output filename>]"
+	# Display available options
 	echo ""
 	echo "-v | --verbose                Show some information about steps performed."
 	echo "-g | --gdb                    Run gdb command on executable."
@@ -28,9 +33,11 @@ if [ $# -lt 1 ]; then
 	echo "-q | --qemu                   Run executable in QEMU emulator. This will execute the program."
 	echo "-64| --x86-64                 Compile for 64bit (x86-64) system."
 	echo "-o | --output <filename>      Output filename."
-
+	# Exit the script
 	exit 1
 fi
+
+#Initialize an array for storing positional arguments and set configuration variables.
 
 POSITIONAL_ARGS=()
 GDB=False
@@ -40,6 +47,8 @@ BITS=False
 QEMU=False
 BREAK="_start"
 RUN=False
+
+#Process command-line arguments
 while [[ $# -gt 0 ]]; do
 	case $1 in
 		-g|--gdb)
@@ -83,17 +92,21 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
+# Restore positional parameters
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
+# Check if the input assembly file exists
 if [[ ! -f $1 ]]; then
 	echo "Specified file does not exist"
 	exit 1
 fi
 
+# Set the output filename if not explicitly provided
 if [ "$OUTPUT_FILE" == "" ]; then
 	OUTPUT_FILE=${1%.*}
 fi
 
+# Display verbose information if requested
 if [ "$VERBOSE" == "True" ]; then
 	echo "Arguments being set:"
 	echo "	GDB = ${GDB}"
@@ -110,6 +123,7 @@ if [ "$VERBOSE" == "True" ]; then
 
 fi
 
+# Assemble the program with NASM based on the selected mode (32- or 64-bit)
 if [ "$BITS" == "True" ]; then
 
 	nasm -f elf64 $1 -o $OUTPUT_FILE.o && echo ""
@@ -121,6 +135,7 @@ elif [ "$BITS" == "False" ]; then
 
 fi
 
+# Display messages about NASM and linking
 if [ "$VERBOSE" == "True" ]; then
 
 	echo "NASM finished"
@@ -128,12 +143,14 @@ if [ "$VERBOSE" == "True" ]; then
 	
 fi
 
-if [ "$VERBOSE" == "True" ]; then
+#Commenting the below out as it is a redundancy in the code, this should not affect the functionality of the program
+#if [ "$VERBOSE" == "True" ]; then
 
-	echo "NASM finished"
-	echo "Linking ..."
-fi
+#	echo "NASM finished"
+#	echo "Linking ..."
+#fi
 
+# Link the object file with ld based on the selected mode (32-bit or 64-bit)
 if [ "$BITS" == "True" ]; then
 
 	ld -m elf_x86_64 $OUTPUT_FILE.o -o $OUTPUT_FILE && echo ""
@@ -145,43 +162,65 @@ elif [ "$BITS" == "False" ]; then
 
 fi
 
-
+# Display a message if verbose mode is enabled
 if [ "$VERBOSE" == "True" ]; then
 
 	echo "Linking finished"
 
 fi
 
+# If the QEMU flag is set, start the emulator
 if [ "$QEMU" == "True" ]; then
 
 	echo "Starting QEMU ..."
 	echo ""
 
+# check the architecture bit flad and run the appropriate QEMU binary
 	if [ "$BITS" == "True" ]; then
-	
+		# For 64 - bit binaries, use qemu-x86_64 to execute the output file
 		qemu-x86_64 $OUTPUT_FILE && echo ""
 
 	elif [ "$BITS" == "False" ]; then
-
+		# For 32-bit binaries, use qemu-i386 to execute the output file
 		qemu-i386 $OUTPUT_FILE && echo ""
 
 	fi
-
+	# Exit the script after running QEMU to prevent further execution
 	exit 0
 	
 fi
 
+# If the GDB flag is set, configure GDB for debugging.
 if [ "$GDB" == "True" ]; then
-
+	
+	# Initialize an array to hold GDB parameters
 	gdb_params=()
+	#Add a breakpoint at the specified location (BREAK variable)
 	gdb_params+=(-ex "b ${BREAK}")
 
+	# If RUN flag is set, add the run command to GDB parameters
 	if [ "$RUN" == "True" ]; then
-
+		# This means GDB will start execution of the program immediately
 		gdb_params+=(-ex "r")
 
 	fi
 
+	# Run GDB with the parameters we've set and the output file as the target
 	gdb "${gdb_params[@]}" $OUTPUT_FILE
 
 fi
+
+# End of the x86_toolchain.sh script.
+# This script provides a versatile toolchain for assembling, linking, and running x86 Assembly programs
+# Various configuration options are present and allow for tailoring of the process and can be further customized to suit specific requriements.
+
+# Top 3 Recommendations:
+# Based on the commenting and examination of this code, the following is recommended:
+# 1. Comprehensive Error Handling: Implementing an error handling mechanism to easily and gracefully handle errors
+# that can occur during script execution, like failing commands, missing dependencies, or incorrect inputs.
+# This will make the script more user friendly. 
+# 2. Modularize the Script: Break down the script into unctions or modules, each responsible for a specific task (assembly, linking, running)
+# Modular code is easier to understand, test, and maintain. Allows for better code reuse.
+# 3. Logging and Documentation: Introduce logging to record script execution and errors, providing a trail for troubleshooting. 
+
+#End. 
